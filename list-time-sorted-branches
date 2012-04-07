@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# list-time-sorted-branches
+# Print out all of your branches sorted by time last modified.
+#
+# By: David Huie
+# email: dahuie@gmail.com
+
+exec > >(sort -r)
+
+for k in $(git branch | sed /\*/d); do
+    echo "$(git log -1 --pretty=format:"%ct" $k) $k"
+done
