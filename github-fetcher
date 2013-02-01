@@ -9,7 +9,7 @@
 # backup repos.
 #
 # Usage:
-#     github-fetcher GIT_SSH GIT_DIR LOG_PREFIX
+#     github-fetcher GIT_SSH GIT_DIR REPO_NAME
 #
 # GIT_SSH: a script that takes the place of SSH. Use this
 #   to specify a custom SSH key for Github. See the git
@@ -19,35 +19,25 @@
 #   is a non-bare git repository, then this is the .git
 #   directory within a clone.
 #
-# LOG_PREFIX: the prefix attached to log files created by
-#   this utility. Make this something specific to the
-#   repository you're updating.
-
-LOG_DIR="/var/log/github-fetcher"
-LOG_FILE=""
+# REPO_NAME: a repository name used for logging
 
 usage () {
     echo "github-fetcher -- fetch updates for all of a repository's Github remotes."
     echo
     echo "  Usage:"
-    echo "      github-fetcher GIT_SSH GIT_DIR LOG_PREFIX"
+    echo "      github-fetcher GIT_SSH GIT_DIR REPO_NAME"
     exit 0
 }
 
-init_log_dir () {
-    if [ ! -d "$LOG_DIR" ]; then
-	mkdir -p "$LOG_DIR"
-    fi
-}
-
 init_log_file () {
-    init_log_dir
+    exec >> "$LOG_DIR/${REPO_NAME}.log" 2>&1
 
-    TIMESTAMP="$(date +%s)"
-    LOG_FILE="$LOG_DIR/$LOG_PREFIX-${TIMESTAMP}.log"
-    touch "$LOG_FILE"
-
-    exec > "$LOG_FILE" 2>&1
+    echo "====="
+    echo "***** DATE=$(date)"
+    echo "***** REPO_NAME=$REPO_NAME"
+    echo "***** USER=$USER"
+    echo "***** GIT_DIR=$GIT_DIR"
+    echo "***** GIT_SSH=$GIT_SSH"
 }
 
 list_remotes () {
@@ -58,17 +48,19 @@ if [ ! "$1" ]; then
     usage
 fi
 
+# Make sure that this directory is writable!
+LOG_DIR="/var/log/github-fetcher"
+
 export GIT_SSH="$1"
 export GIT_DIR="$2"
-LOG_PREFIX="$3"
+REPO_NAME="$3"
 
 init_log_file
-
-echo "***** USER=$USER"
-echo "***** GIT_DIR=$GIT_DIR"
-echo "***** GIT_SSH=$GIT_SSH"
 
 for remote in $(list_remotes); do
     echo "***** Fetching remote ${remote}..."
     git fetch "$remote"
+    echo "***** Done."
 done
+
+echo "====="
