@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# git-fetcher
+# by: David Huie
+
+usage () {
+    echo "git-fetcher -- fetch updates for all of a repository's remotes"
+    echo
+    echo "  Usage:"
+    echo "    git-fetcher PATH_TO_GIT_DIR"
+    exit 0
+}
+
+list_remotes () {
+    git remote -v | awk '{print $1}' | uniq
+}
+
+if [ ! "$1" ]; then
+    usage
+fi
+
+export GIT_DIR="$1"
+
+list_remotes | xargs -I '{}' git fetch {}
