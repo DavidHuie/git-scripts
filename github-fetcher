@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# github-fetcher
+# by: David Huie
+#
+# This utility runs a `git fetch` command on each of
+# a local git repository's remote Github repos. Use this
+# utility to create cronjobs for maintaining Github
+# backup repos.
+#
+# Usage:
+#     github-fetcher GIT_SSH GIT_DIR LOG_PREFIX
+#
+# GIT_SSH: a script that takes the place of SSH. Use this
+#   to specify a custom SSH key for Github. See the git
+#   man page for more information.
+#
+# GIT_DIR: the path to the local git repository. If this
+#   is a non-bare git repository, then this is the .git
+#   directory within a clone.
+#
+# LOG_PREFIX: the prefix attached to log files created by
+#   this utility. Make this something specific to the
+#   repository you're updating.
+
+LOG_DIR="/var/log/github-fetcher"
+LOG_FILE=""
+
+usage () {
+    echo "github-fetcher -- fetch updates for all of a repository's Github remotes."
+    echo
+    echo "  Usage:"
+    echo "      github-fetcher GIT_SSH GIT_DIR LOG_PREFIX"
+    exit 0
+}
+
+init_log_dir () {
+    if [ ! -d "$LOG_DIR" ]; then
+	mkdir -p "$LOG_DIR"
+    fi
+}
+
+init_log_file () {
+    init_log_dir
+
+    TIMESTAMP="$(date +%s)"
+    LOG_FILE="$LOG_DIR/$LOG_PREFIX-${TIMESTAMP}.log"
+    touch "$LOG_FILE"
+
+    exec > "$LOG_FILE" 2>&1
+}
+
+list_remotes () {
+    git remote -v | grep github | awk '{print $1}' | uniq
+}
+
+if [ ! "$1" ]; then
+    usage
+fi
+
+export GIT_SSH="$1"
+export GIT_DIR="$2"
+LOG_PREFIX="$3"
+
+init_log_file
+
+echo "***** USER=$USER"
+echo "***** GIT_DIR=$GIT_DIR"
+echo "***** GIT_SSH=$GIT_SSH"
+
+for remote in $(list_remotes); do
+    echo "***** Fetching remote ${remote}..."
+    git fetch "$remote"
+done
