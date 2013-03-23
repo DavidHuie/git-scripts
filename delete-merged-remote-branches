@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# delete-merged-remote-branches
+# by: David Huie
+
+# This script determines which remote branches
+# have been merged into origin's master and deletes
+# them.
+
+git branch -r | grep origin | grep -v master | xargs -I {} bash -c 'if [[ ! `git cherry HEAD {}` ]]; then echo "{} -- $(git show --format=%an {} | head -n 1)"; fi'
