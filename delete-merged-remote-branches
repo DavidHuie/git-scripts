@@ -7,4 +7,6 @@
 # have been merged into origin's master and deletes
 # them.
 
-git branch -r | grep origin | grep -v master | xargs -I {} bash -c 'if [[ ! `git cherry HEAD {}` ]]; then echo "{} -- $(git show --format=%an {} | head -n 1)"; fi'
+git fetch origin
+
+git branch -r | grep origin | sed 's/origin\///' | grep -v master | grep -v deploy | xargs -I {} bash -c 'if [[ ! `git cherry origin/master origin/{}` ]]; then echo "deleting branch {}" && git push origin :{}; fi'
